@@ -41,7 +41,7 @@ function addMarkupCounntryList(countries) {
     .map(({ name: { official }, flags, capital, population, languages }) => {
       const language = Object.values(languages).join(', ');
       return `<div class="country-info-head">
-      <img class="country-info-flag" src="${flags[0]}" alt="flag of country" width="100">
+      <img class="country-info-flag" src="${flags.png}" alt="flag of country" width="100">
       <h2 class="country-info-title">${official}</h2>
       <p class="country-info-capital"><strong>Capital: </strong>${capital}</p>
       <p class="country-info-population"><strong>Population: </strong>${population}</p>
