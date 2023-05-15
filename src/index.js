@@ -1,5 +1,5 @@
 import './css/styles.css';
-import fetchCountries from './fetchCountries';
+import fetchCountriesFromBeckend from './fetchCountries';
 import debounce from 'lodash.debounce';
 import Notiflix from 'notiflix';
 
@@ -14,46 +14,80 @@ console.log('🚀 ~ file: index.js:13 ~ countryInfoRef:', countryInfoRef);
 
 searchBoxRef.addEventListener('input', debounce(onSearch, DEBOUNCE_DELAY));
 
-function onSearch() {
-  const countryName = searchBoxRef.value.trim();
+function onSearch(e) {
+  const formSearch = e.target.value.trim();
 
-  fetchCountries(countryName)
-    .then(countries => {
-      if (countries.length >= 2 && countries.length <= 10) {
-        addMarkupCounntryList(countries);
-      } else if (countries.length === 1) {
-        addMarkupCounntryList(countries);
-      } else if (countries.length >= 10) {
-        Notiflix.Notify.info(
-          'Too many matches found. Please enter a more specific name.'
-        );
-      }
-    })
-    .catch(error => {
-      Notiflix.Notify.failure('Oops, there is no country with that name');
-      clearContent();
-    });
+  if (formSearch) {
+    fetchCountriesFromBeckend
+      .fetchCountries(formSearch)
+      .then(successInput)
+      .catch(errorRender);
+  }
+
+  clearInput(formSearch);
 }
 
-function addMarkupCounntryList(countries) {
-  clearContent();
-  const markupCountriesList = countries
-    .map(({ name: { official }, flags, capital, population, languages }) => {
-      const language = Object.values(languages).join(', ');
-      return `<div class="country-info-head">
-      <img class="country-info-flag" src="${flags.png}" alt="flag of country" width="100">
-      <h2 class="country-info-title">${official}</h2>
-      <p class="country-info-capital"><strong>Capital: </strong>${capital}</p>
-      <p class="country-info-population"><strong>Population: </strong>${population}</p>
-      <p class="country-info-languages"><strong>Languages: </strong>${language}</p>
-      </div>`;
+function renderSingleCountry(result) {
+  if (result.length === 1) {
+    countriesListRef.innerHTML = renderCountryList(result);
+    countryInfoRef.innerHTML = renderCountryInfo(result);
+  }
+}
+
+function renderSeveralCountry(result) {
+  if (result.length >= 2 && result.length <= 10) {
+    countryInfoRef.innerHTML = '';
+    countriesListRef.innerHTML = renderCountryList(result);
+  }
+}
+
+function renderMultiduteCountry(result) {
+  if (result.length >= 10) {
+    Notiflix.Notify.info(
+      'Too many matches found. Please enter a more specific name.'
+    );
+  }
+}
+
+function errorRender() {
+  Notiflix.Notify.failure('Oops, there is no country with that name');
+}
+
+function clearInput(formSearch) {
+  if (formSearch === '') {
+    countriesListRef.innerHTML = '';
+    countryInfoRef.innerHTML = '';
+  }
+}
+
+function renderCountryList(e) {
+  return e.map(el => {
+    return `
+    <li class="country-item">
+    <img src="${el.flags.svg}" width="30" height="20">
+    <b class="country-name">${el.name.official}</b>
+    </li>
+    `;
+  });
+}
+
+function renderCountryInfo(e) {
+  return e
+    .map(el => {
+      const language = Object.values(el.languages).join(', ');
+      return `
+    <ul class="country-info-head">
+    <li><p class="country-info-text">Capital: <span class="country-info-span">${el.capital}</span></p></li>
+    <li><p class="country-info-text">Population: <span class="country-info-span">${el.population}</span></p></li>
+    <li><p class="country-info-text">Languages: <span class="country-info-span">${language}</span></p></li>
+    </ul>
+    `;
     })
     .join('');
-
-  return (countryInfoRef.innerHTML = markupCountriesList);
 }
 
-function clearContent() {
-  countriesListRef.innerHTML = '';
-  countryInfoRef.innerHTML = '';
+function successInput(result) {
+  renderSingleCountry(result);
+  renderSeveralCountry(result);
+  renderMultiduteCountry(result);
 }
